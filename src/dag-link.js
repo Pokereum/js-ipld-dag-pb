@@ -23,7 +23,7 @@ class DAGLink {
     return `DAGLink <${mhStr} - name: "${this.name}", size: ${this.size}>`
   }
 
-  toJSON() {
+  toJSON () {
     return {
       name: this.name,
       size: this.size,
@@ -31,27 +31,27 @@ class DAGLink {
     }
   }
 
-  get name() {
+  get name () {
     return this._name
   }
 
-  set name() {
+  set name (name) {
     throw ImmutableError
   }
 
-  get size() {
+  get size () {
     return this._size
   }
 
-  set size() {
+  set size (size) {
     throw ImmutableError
   }
 
-  get hash() {
-    return this._multihash ? mh.toB58String(this._multihash) : undefined
+  get multihash () {
+    return this._multihash
   }
 
-  set hash() {
+  set multihash (multihash) {
     throw ImmutableError
   }
 }

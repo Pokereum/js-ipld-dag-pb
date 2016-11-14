@@ -37,7 +37,6 @@
 const dagPB = require('ipld-dag-pb')
 
 // then, to access each of the components
-dagPB.DAGNode // DAGNode Class
 dagPB.DAGNode.create // function to create DAGNodes (recommended usage)
 dagPB.resolver
 dagPB.util
@@ -50,8 +49,10 @@ dagPB.util
 Create a new DAGNode
 
 ```JavaScript
-var node = new dagPB.DAGNode([<data>, <[links]>])
+dagPB.DAGNode.create([<data>, <[links]>, hashAlgorithm, callback]) 
 ```
+
+#### TODO: update the functions docs from here on out
 
 #### `addNodeLink`
 

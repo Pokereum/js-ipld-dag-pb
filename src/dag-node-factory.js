@@ -2,14 +2,29 @@
 
 const stable = require('stable')
 const sort = stable.inplace
-const mh = require('multihashes')
+// const mh = require('multihashes')
+const protobuf = require('protocol-buffers')
+const proto = protobuf(require('./dag.proto'))
 const util = require('./util')
+const DAGNode = require('./dag-node')
 const DAGLink = require('./dag-link')
 
 class DAGNodeFactory {
-  static create (data, dagLinks, hashAlg) {
-    if (!dagLinks) {
+  static create (data, dagLinks, hashAlg, callback) {
+    if (typeof data === 'function') {
+      // empty obj
+      callback = data
+      data = undefined
+    }
+    if (typeof dagLinks === 'function') {
+      // empty obj
+      callback = dagLinks
       dagLinks = []
+    }
+    if (typeof hashAlg === 'function') {
+      // empty obj
+      callback = hashAlg
+      hashAlg = undefined
     }
 
     if (!hashAlg) {
@@ -19,7 +34,7 @@ class DAGNodeFactory {
     const links = dagLinks.map((l) => {
       if (!l.constructor && l.constructor.name !== 'DAGLink') {
         return l
-      } 
+      }
 
       // haadcode: are the .name vs .Name for backwards compatibility?
       const link = new DAGLink(l.name || l.Name,
@@ -28,35 +43,27 @@ class DAGNodeFactory {
       return link
     })
 
-    // haadcode: would be better to have: links = sort(links, util.linkSort)
+    // Sort the links (in-place)
     sort(links, util.linkSort)
 
-    return new Promise((resolve, reject) => {
-      util.serialize({ data: data, links: links}, (err, serialized) => {
+    DAGNodeFactory._serialize({
+      data: data,
+      links: links
+    }, (err, serialized) => {
+      if (err) {
+        callback(err)
+      }
+      util.hash(hashAlg, serialized, (err, multihash) => {
         if (err) {
-          reject(err)
+          callback(err)
         }
-        util.hash(hashAlg, serialized, (err, multihash) => {
-          if (err) {
-            reject(err)
-          }
-          const dagNode = new DAGNode(data, links, serialized, multihash)
-          resolve(dagNode)
-        })
+        const dagNode = new DAGNode(data, links, serialized, multihash)
+        callback(null, dagNode)
       })
-
-      /* 
-        Alternatively, if util functions were promisified, 
-        we could write this much shorter as:
-        
-        return util.serialize({ data: data, links: links})
-          .then((serialized) => util.hash(hashAlg, serialized))
-          .then((multihash) => new DAGNode(data, links, serialized, multihash))
-      */
     })
-  }  
+  }
 
-  static addLink(dagNode, nameOrLink, nodeOrMultihash) {
+  static addLink (dagNode, nameOrLink, nodeOrMultihash, callback) {
     const links = DAGNodeFactory._cloneLinks(dagNode)
     const data = DAGNodeFactory._cloneData(dagNode)
     let newLink = null
@@ -67,7 +74,6 @@ class DAGNodeFactory {
       newLink = nameOrLink
     } else if (typeof nameOrLink === 'string') {
       // It's a name
-      const name = nameOrLink
       if ((nodeOrMultihash.constructor &&
          nodeOrMultihash.constructor.name === 'DAGNode')) {
         // It's a node
@@ -80,18 +86,17 @@ class DAGNodeFactory {
       }
     }
 
-    if (link) {
-      links.push(link)
-      sort(links, util.linkSort)      
+    if (newLink) {
+      links.push(newLink)
+      sort(links, util.linkSort)
     } else {
-      throw new Error("Link given as the argument is invalid")
+      throw new Error('Link given as the argument is invalid')
     }
 
-    // haadcode: shouldn't we clone the serialized and multihash properties too?
-    return DAGNodeFactory.create(data, links, dagNode.serialized, dagNode.multihash)
+    DAGNodeFactory.create(data, links, callback)
   }
 
-  static removeLink(dagNode, nameOrMultihash) {
+  static removeLink (dagNode, nameOrMultihash, callback) {
     let data = DAGNodeFactory._cloneData(dagNode)
     let links = DAGNodeFactory._cloneLinks(dagNode)
 
@@ -103,8 +108,7 @@ class DAGNodeFactory {
       throw new Error('second arg needs to be a name or multihash')
     }
 
-    // haadcode: shouldn't we clone the serialized and multihash properties too?
-    return DAGNodeFactory.create(data, links, dagNode.serialized, dagNode.multihash)
+    DAGNodeFactory.create(data, links, callback)
   }
 
   /*
@@ -115,14 +119,13 @@ class DAGNodeFactory {
     return new DAGLink(null, dagNode.size, dagNode.multihash)
   }
 
-  static clone (dagNode) {
+  static clone (dagNode, callback) {
     const data = DAGNodeFactory._cloneData(dagNode)
     const links = DAGNodeFactory._cloneLinks(dagNode)
-    // haadcode: shouldn't we clone the serialized and multihash properties too?
-    return DAGNodeFactory.create(data, links, dagNode.serialized, dagNode.multihash)
+    DAGNodeFactory.create(data, links, callback)
   }
 
-  static _cloneData(dagNode) {
+  static _cloneData (dagNode) {
     let data = new Buffer(0)
     if (dagNode.data && dagNode.data.length > 0) {
       data = new Buffer(dagNode.data.length)
@@ -131,8 +134,59 @@ class DAGNodeFactory {
     return data
   }
 
-  static _cloneLinks(dagNode) {
+  static _cloneLinks (dagNode) {
     return dagNode.links.length > 0 ? dagNode.links.slice() : []
+  }
+
+  static _serialize (node, callback) {
+    let serialized
+
+    try {
+      const pb = DAGNodeFactory.toProtoBuf(node)
+      serialized = proto.PBNode.encode(pb)
+    } catch (err) {
+      return callback(err)
+    }
+
+    callback(null, serialized)
+  }
+
+  static _deserialize (data, callback) {
+    const pbn = proto.PBNode.decode(data)
+
+    const links = pbn.Links.map((link) => {
+      return new DAGLink(link.Name, link.Tsize, link.Hash)
+    })
+
+    sort(links, util.linkSort)
+
+    const buf = pbn.Data || new Buffer(0)
+
+    DAGNodeFactory.create(buf, links, callback)
+  }
+
+  static toProtoBuf (node) {
+    const pbn = {}
+
+    if (node.data && node.data.length > 0) {
+      pbn.Data = node.data
+    } else {
+      pbn.Data = null // new Buffer(0)
+    }
+
+    if (node.links.length > 0) {
+      pbn.Links = node.links.map((link) => {
+        return {
+          Hash: link.hash,
+          Name: link.name,
+          Tsize: link.size
+        }
+      })
+    } else {
+      pbn.Links = null
+    }
+
+    return pbn
   }
 }
 

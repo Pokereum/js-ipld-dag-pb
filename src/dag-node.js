@@ -1,17 +1,12 @@
 'use strict'
 
-const stable = require('stable')
-const sort = stable.inplace
 const mh = require('multihashes')
 const assert = require('assert')
-const util = require('./util')
-const DAGLink = require('./dag-link')
 
 const ImmutableError = new Error('Immutable property')
 
 class DAGNode {
   constructor (data, links, serialized, multihash) {
-    // Should these be "throw new Error()" instead?
     assert(serialized, 'DAGNode needs its serialized format')
     assert(multihash, 'DAGNode needs its multihash')
 
@@ -25,7 +20,7 @@ class DAGNode {
     this._multihash = multihash || new Buffer(0) // TODO: default multihash object
   }
 
-  toJSON() {
+  toJSON () {
     return {
       data: this.data,
       links: this.links.map((l) => l.json),
@@ -39,43 +34,43 @@ class DAGNode {
     return `DAGNode <${mhStr} - data: "${this.data.toString()}", links: ${this.links.length}, size: ${this.size}>`
   }
 
-  get data() {
+  get data () {
     return this._data
   }
 
-  set data() {
+  set data (data) {
     throw ImmutableError
   }
 
-  get links() {
+  get links () {
     return this._links
   }
 
-  set links() {
+  set links (links) {
     throw ImmutableError
   }
 
-  get serialized() {
+  get serialized () {
     return this._serialized
   }
 
-  set serialized() {
+  set serialized (serialized) {
     throw ImmutableError
   }
 
-  get size() {
+  get size () {
     return this.links.reduce((sum, l) => sum + l.size, this.serialized.length)
   }
 
-  set size() {
+  set size (size) {
     throw ImmutableError
   }
 
-  get multihash() {
+  get multihash () {
     return this._multihash
   }
 
-  set multihash() {
+  set multihash (multihash) {
     throw ImmutableError
   }
 }
