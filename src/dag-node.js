@@ -18,15 +18,16 @@ class DAGNode {
     this._links = links || []
     this._serialized = serialized || new Buffer(0) // TODO: default serialized object
     this._multihash = multihash || new Buffer(0) // TODO: default multihash object
-  }
-
-  toJSON () {
-    return {
+    this._json = {
       data: this.data,
       links: this.links.map((l) => l.json),
       hash: mh.toB58String(this.multihash),
       size: this.size
     }
+  }
+
+  toJSON () {
+    return this._json
   }
 
   toString () {
