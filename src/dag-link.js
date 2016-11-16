@@ -2,8 +2,6 @@
 
 const mh = require('multihashes')
 
-const ImmutableError = new Error('Immutable property')
-
 // Link represents an IPFS Merkle DAG Link between Nodes.
 class DAGLink {
   constructor (name, size, multihash) {
@@ -36,7 +34,7 @@ class DAGLink {
   }
 
   set name (name) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'name' is immutable`)
   }
 
   get size () {
@@ -44,7 +42,7 @@ class DAGLink {
   }
 
   set size (size) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'size' is immutable`)
   }
 
   get multihash () {
@@ -52,7 +50,7 @@ class DAGLink {
   }
 
   set multihash (multihash) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'multihash' is immutable`)
   }
 }
 

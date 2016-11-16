@@ -3,8 +3,6 @@
 const mh = require('multihashes')
 const assert = require('assert')
 
-const ImmutableError = new Error('Immutable property')
-
 class DAGNode {
   constructor (data, links, serialized, multihash) {
     assert(serialized, 'DAGNode needs its serialized format')
@@ -41,7 +39,7 @@ class DAGNode {
   }
 
   set data (data) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'data' is immutable`)
   }
 
   get links () {
@@ -49,7 +47,7 @@ class DAGNode {
   }
 
   set links (links) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'links' is immutable`)
   }
 
   get serialized () {
@@ -57,7 +55,7 @@ class DAGNode {
   }
 
   set serialized (serialized) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'serialized' is immutable`)
   }
 
   get size () {
@@ -65,7 +63,7 @@ class DAGNode {
   }
 
   set size (size) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'size' is immutable`)
   }
 
   get multihash () {
@@ -73,7 +71,7 @@ class DAGNode {
   }
 
   set multihash (multihash) {
-    throw ImmutableError
+    throw new Error(`Can't set property: 'multihash' is immutable`)
   }
 }
 
