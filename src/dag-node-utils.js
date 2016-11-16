@@ -1,12 +1,23 @@
 'use strict'
 
+const multihashing = require('multihashing-async')
+const CID = require('cids')
 const stable = require('stable')
 const sort = stable.inplace
 const protobuf = require('protocol-buffers')
 const proto = protobuf(require('./dag.proto'))
-const util = require('./util')
 const DAGNode = require('./dag-node')
 const DAGLink = require('./dag-link')
+
+const hash = (type, data, cb) => multihashing(data, type, cb)
+
+const linkSort = (a, b) => {
+  return (new Buffer(a.name || '', 'ascii').compare(new Buffer(b.name || '', 'ascii')))
+}
+
+function cid (node, callback) {
+  callback(null, new CID(node.multihash))
+}
 
 function create (data, dagLinks, hashAlg, callback) {
   if (typeof data === 'function') {
@@ -42,7 +53,7 @@ function create (data, dagLinks, hashAlg, callback) {
   })
 
   // Sort the links (in-place)
-  sort(links, util.linkSort)
+  sort(links, linkSort)
 
   serialize({
     data: data,
@@ -51,7 +62,7 @@ function create (data, dagLinks, hashAlg, callback) {
     if (err) {
       callback(err)
     }
-    util.hash(hashAlg, serialized, (err, multihash) => {
+    hash(hashAlg, serialized, (err, multihash) => {
       if (err) {
         callback(err)
       }
@@ -86,7 +97,7 @@ function addLink (dagNode, nameOrLink, nodeOrMultihash, callback) {
 
   if (newLink) {
     links.push(newLink)
-    sort(links, util.linkSort)
+    sort(links, linkSort)
   } else {
     throw new Error('Link given as the argument is invalid')
   }
@@ -143,7 +154,7 @@ function deserialize (data, callback) {
     return new DAGLink(link.Name, link.Tsize, link.Hash)
   })
 
-  sort(links, util.linkSort)
+  sort(links, linkSort)
 
   const buf = pbn.Data || new Buffer(0)
 
@@ -188,10 +199,12 @@ function _cloneLinks (dagNode) {
 }
 
 exports.create = create
+exports.clone = clone
 exports.addLink = addLink
 exports.removeLink = removeLink
 exports.toDAGLink = toDAGLink
-exports.toProtoBuf = toProtoBuf
-exports.serialize = serialize
-exports.deserialize = deserialize
-exports.clone = clone
+exports.util = {
+  serialize: serialize,
+  deserialize: deserialize,
+  cid: cid
+}
