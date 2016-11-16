@@ -1,6 +1,6 @@
 'use strict'
 
-const DAGNode = require('./dag-node-utils.js')
+const DAGNode = require('./utils.js')
 exports.DAGNode = DAGNode
 exports.DAGLink = require('./dag-link.js')
 exports.resolver = require('./resolver.js')

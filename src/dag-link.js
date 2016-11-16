@@ -25,7 +25,7 @@ class DAGLink {
     return {
       name: this.name,
       size: this.size,
-      hash: this.multihash ? mh.toB58String(this.multihash) : null
+      hash: this.multihash ? mh.toB58String(this.multihash) : undefined
     }
   }
 

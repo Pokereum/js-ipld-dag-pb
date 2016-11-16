@@ -2,8 +2,7 @@
 
 const multihashing = require('multihashing-async')
 const CID = require('cids')
-const stable = require('stable')
-const sort = stable.inplace
+const sort = require('stable').inplace
 const protobuf = require('protocol-buffers')
 const proto = protobuf(require('./dag.proto'))
 const DAGNode = require('./dag-node')
@@ -62,7 +61,7 @@ function create (data, dagLinks, hashAlg, callback) {
     if (err) {
       callback(err)
     }
-    hash(hashAlg, serialized, (err, multihash) => {
+    multihashing(serialized, hashAlg, (err, multihash) => {
       if (err) {
         callback(err)
       }
@@ -81,16 +80,13 @@ function addLink (dagNode, nameOrLink, nodeOrMultihash, callback) {
        nameOrLink.constructor.name === 'DAGLink')) {
     // It's a link
     newLink = nameOrLink
-  } else if (typeof nameOrLink === 'string') {
     // It's a name
     if ((nodeOrMultihash.constructor &&
        nodeOrMultihash.constructor.name === 'DAGNode')) {
       // It's a node
-      // haadcode: not sure what ^ means, so the line below might not be correct
       newLink = toDAGLink(nodeOrMultihash)
     } else {
       // It's a multihash
-      // haadcode: not sure what ^ means, so the line below might not be correct
       newLink = new DAGLink(null, dagNode.size, nodeOrMultihash)
     }
   }
@@ -99,22 +95,22 @@ function addLink (dagNode, nameOrLink, nodeOrMultihash, callback) {
     links.push(newLink)
     sort(links, linkSort)
   } else {
-    throw new Error('Link given as the argument is invalid')
+    return callback(new Error('Link given as the argument is invalid'), null)
   }
 
   create(data, links, callback)
 }
 
 function removeLink (dagNode, nameOrMultihash, callback) {
-  let data = _cloneData(dagNode)
+  const data = _cloneData(dagNode)
   let links = _cloneLinks(dagNode)
 
   if (typeof nameOrMultihash === 'string') {
-    links = dagNode.links.filter((link) => link.name !== nameOrMultihash)
+    links = links.filter((link) => link.name !== nameOrMultihash)
   } else if (Buffer.isBuffer(nameOrMultihash)) {
-    links = dagNode.links.filter((link) => !link.hash.equals(nameOrMultihash))
+    links = links.filter((link) => !link.hash.equals(nameOrMultihash))
   } else {
-    throw new Error('second arg needs to be a name or multihash')
+    return callback(new Error('second arg needs to be a name or multihash'), null)
   }
 
   create(data, links, callback)
@@ -167,7 +163,7 @@ function toProtoBuf (node) {
   if (node.data && node.data.length > 0) {
     pbn.Data = node.data
   } else {
-    pbn.Data = null // new Buffer(0)
+    pbn.Data = null//new Buffer(0)
   }
 
   if (node.links.length > 0) {
