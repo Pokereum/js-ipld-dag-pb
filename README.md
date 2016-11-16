@@ -37,69 +37,84 @@
 const dagPB = require('ipld-dag-pb')
 
 // then, to access each of the components
-dagPB.DAGNode.create // function to create DAGNodes (recommended usage)
+dagPB.DAGNode.create // function to create DAGNodes
 dagPB.resolver
 dagPB.util
 ```
 
 ## API
 
-### DAGNode Class
+### DAGNode
 
-Create a new DAGNode
+DAGNodes are created and manipulated with `DAGNode` class methods. You **can't instantiate a DAGNode directly** with `new DAGNode(...)`.
 
-```JavaScript
-dagPB.DAGNode.create([<data>, <[links]>, hashAlgorithm, callback]) 
+You can incude it in your project with:
+
+```javascript
+const dagPB = require('ipld-dag-pb').DAGNode
 ```
 
-#### TODO: update the functions docs from here on out
+#### create(data, dagLinks, hashAlg, callback)
 
-#### `addNodeLink`
+Create a DAGNode.
 
-> creates a link on node A to node B by using node B to get its multihash
+```JavaScript
+DAGNode.create("data", (err, dagNode) => ...) 
+```
 
-#### `addRawLink`
+#### addLink(dagNode, nameOrLink, nodeOrMultihash, callback)
 
-> creates a link on node A to node B by using directly node B multihash
+Creates a link on node A to node B by using node B to get its multihash. Returns a *new* instance of DAGNode without modifying the old one.
 
-#### `updateNodeLink`
+```JavaScript
+DAGNode.addLink(node, "Link1" (err, dagNode) => ...) 
+```
 
-> updates a link on the node. *caution* this method returns a copy of the MerkleDAG node
+#### removeLink(dagNode, nameOrMultihash, callback)
 
-#### `removeNodeLink`
+Removes a link from the node by name. Returns a *new* instance of DAGNode without modifying the old one.
 
-> removes a link from the node by name
+```JavaScript
+DAGNode.removeLink(node, "Link1" (err, dagNode) => ...) 
+```
 
-#### `removeNodeLinkByHash`
+#### clone(dagNode, callback)
 
-> removes a link from the node by the hash of the linked node
+Creates a clone of the MerkleDAG Node
 
+```JavaScript
+DAGNode.clone(node, (err, dagNode) => ...) 
+```
 
-#### `clone`
+### DAGNode
 
-> creates a clone of the MerkleDAG Node
+The DAGNode instance returned by `DAGNode` class methods has the following properties. You **can't instantiate a DAGNode directly** with `new DAGNode(...)`, see [DAGNode.create()](#create) for details.
 
-#### `size`
+#### size
 
-> (property) size of the node, in bytes
+Size of the node, in bytes
 
-#### `links`
+```JavaScript
+const size = dagNode.size
+```
 
-> (property) an array of `DAGLink`s belonging to the node
+#### links
 
-#### `multihash(callback)`
+An array of `DAGLink`s belonging to the node
 
-> returns the multihash (default: sha2-256)
+```JavaScript
+const links = dagNode.links
+```
 
-#### `getPBNode`
+#### multihash
 
-> used internally
+Returns the multihash (default: sha2-256)
 
-#### `makeLink`
+```JavaScript
+const multihash = dagNode.multihash
+```
 
-> used internally
-
-### DAGLink Class
+### DAGLink
 
 Create a new DAGLink
 

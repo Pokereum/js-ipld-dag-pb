@@ -14,8 +14,8 @@ class DAGNode {
 
     this._data = data || new Buffer(0)
     this._links = links || []
-    this._serialized = serialized || new Buffer(0) // TODO: default serialized object
-    this._multihash = multihash || new Buffer(0) // TODO: default multihash object
+    this._serialized = serialized
+    this._multihash = multihash
     this._size = this.links.reduce((sum, l) => sum + l.size, this.serialized.length)
     this._json = {
       data: this.data,

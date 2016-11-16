@@ -90,7 +90,7 @@ module.exports = (repo) => {
         expect(err).to.not.exist.mark()
         expect(node.data.length).to.be.equal(0).mark()
         expect(Buffer.isBuffer(node.data)).to.be.true.mark()
-        expect(node.size).to.be.equal(0).mark()
+        expect(node.size).to.be.equal(2).mark()
 
         DAGNode.util.serialize(node, (err, serialized) => {
           expect(err).to.not.exist.mark()

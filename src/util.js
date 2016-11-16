@@ -8,8 +8,6 @@ const proto = protobuf(require('./dag.proto'))
 const DAGNode = require('./dag-node')
 const DAGLink = require('./dag-link')
 
-const hash = (type, data, cb) => multihashing(data, type, cb)
-
 const linkSort = (a, b) => {
   return (new Buffer(a.name || '', 'ascii').compare(new Buffer(b.name || '', 'ascii')))
 }
@@ -20,17 +18,14 @@ function cid (node, callback) {
 
 function create (data, dagLinks, hashAlg, callback) {
   if (typeof data === 'function') {
-    // empty obj
     callback = data
     data = undefined
   }
   if (typeof dagLinks === 'function') {
-    // empty obj
     callback = dagLinks
     dagLinks = []
   }
   if (typeof hashAlg === 'function') {
-    // empty obj
     callback = hashAlg
     hashAlg = undefined
   }
@@ -44,7 +39,6 @@ function create (data, dagLinks, hashAlg, callback) {
       return l
     }
 
-    // haadcode: are the .name vs .Name for backwards compatibility?
     const link = new DAGLink(l.name || l.Name,
                              l.size || l.Size,
                              l.hash || l.Hash || l.multihash)
@@ -59,11 +53,11 @@ function create (data, dagLinks, hashAlg, callback) {
     links: links
   }, (err, serialized) => {
     if (err) {
-      callback(err)
+      return callback(err)
     }
     multihashing(serialized, hashAlg, (err, multihash) => {
       if (err) {
-        callback(err)
+        return callback(err)
       }
       const dagNode = new DAGNode(data, links, serialized, multihash)
       callback(null, dagNode)
@@ -93,7 +87,6 @@ function addLink (dagNode, nameOrLink, nodeOrMultihash, callback) {
 
   if (newLink) {
     links.push(newLink)
-    sort(links, linkSort)
   } else {
     return callback(new Error('Link given as the argument is invalid'), null)
   }
@@ -163,7 +156,7 @@ function toProtoBuf (node) {
   if (node.data && node.data.length > 0) {
     pbn.Data = node.data
   } else {
-    pbn.Data = null//new Buffer(0)
+    pbn.Data = new Buffer(0)
   }
 
   if (node.links.length > 0) {
